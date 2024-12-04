@@ -10,43 +10,46 @@ app.use(express.static("public"));
 app.use(express.static("utils"));
 
 // Global variables for game state
-var deck_info, deck_id = null;
-var playerHand = [];
-var dealerHand = [];
-var results = "Game in Play";
+const gameState = {
+    deck_info: null,
+    deck_id: null,
+    playerHand: [],
+    dealerHand: [],
+    results: "Game in Play",
+};
 
 // Initialize the deck before handling requests
-deck_info = await functions.initializeDeck();
-deck_id = deck_info.deck_id;
-console.log("Deck Initialized: ", deck_info);
+gameState.deck_info = await functions.initializeDeck();
+gameState.deck_id = gameState.deck_info.deck_id;
+console.log("Deck Initialized: ", gameState.deck_info);
 
 
 // Route for the home page (initial deal)
 app.get("/", async (req, res) => {
-    if (!deck_info) {
+    if (!gameState.deck_info) {
         return res.status(500).send("Deck not initialized.");
     }
 
     try {
         // Deal Player's cards
-        let newCard = await functions.drawCard(deck_id, 2);
-        playerHand = functions.cardToHand(playerHand, newCard);
+        let newCard = await functions.drawCard(gameState.deck_id, 2);
+        gameState.playerHand = functions.cardToHand(gameState.playerHand, newCard);
         
         // Deal Dealer's cards
-        newCard = await functions.drawCard(deck_id, 2);
-        dealerHand = functions.cardToHand(dealerHand, newCard);
+        newCard = await functions.drawCard(gameState.deck_id, 2);
+        gameState.dealerHand = functions.cardToHand(gameState.dealerHand, newCard);
 
         // Converts card data from the response into a readable "Value Suit" string format.
-        const playerHandString = functions.cardsToStrings(playerHand);
-        const dealerHandString = functions.cardsToStrings(dealerHand);
+        const playerHandString = functions.cardsToStrings(gameState.playerHand);
+        const dealerHandString = functions.cardsToStrings(gameState.dealerHand);
        
         // Print cards in play of the Dealer & Player
         console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
         
         // update deck_info
-        deck_info = await functions.updateDeck_info(deck_id);
+        gameState.deck_info = await functions.updateDeck_info(gameState.deck_id);
 
-        res.render("index.ejs", {deck_info, playerHand, dealerHand, results});
+        res.render("index.ejs", {gameState});
     } catch (error) {
         console.error("Error dealing cards:", error);
         res.status(500).send("An error occurred while dealing cards.");
@@ -55,30 +58,30 @@ app.get("/", async (req, res) => {
 
 // Route for drawing additional cards
 app.get("/hit", async (req, res) => {
-    if (!deck_info) {
+    if (!gameState.deck_info) {
         return res.status(500).send("Deck not initialized.");
     }
 
     try {
         // Draw cards into play
-        const newCard = await functions.drawCard(deck_id, 1)
+        const newCard = await functions.drawCard(gameState.deck_id, 1)
         
         // Place draw cards into player hand
-        playerHand = functions.cardToHand(playerHand, newCard);
+        gameState.playerHand = functions.cardToHand(gameState.playerHand, newCard);
         
         // Converts card data from the response into a readable "Value Suit" string format.   
-        const playerHandString = functions.cardsToStrings(playerHand);
-        const dealerHandString = functions.cardsToStrings(dealerHand);
+        const playerHandString = functions.cardsToStrings(gameState.playerHand);
+        const dealerHandString = functions.cardsToStrings(gameState.dealerHand);
         
          // Print cards in play of the Dealer & Player
          console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
         
-         results = functions.check(playerHand, dealerHand);
+         gameState.results = functions.check(gameState.playerHand, gameState.dealerHand);
 
         // Update deck_info
-        deck_info = await functions.updateDeck_info(deck_id);
+        gameState.deck_info = await functions.updateDeck_info(gameState.deck_id);
 
-        res.render("index.ejs", {deck_info, playerHand, dealerHand, results});
+        res.render("index.ejs", {gameState });
     } catch (error) {
         console.error('- Error drawing cards: \n', error);
         res.status(500).send("An error occurred while drawing cards.");
@@ -89,12 +92,12 @@ app.get("/hit", async (req, res) => {
 app.get("/shuffle", async (req, res) => {
     try {
           // Reset deck.        
-        const response = await axios(`https://deckofcardsapi.com/api/deck/${deck_id}/shuffle/`);
-        deck_info = response.data        
+        const response = await axios(`https://deckofcardsapi.com/api/deck/${gameState.deck_id}/shuffle/`);
+        gameState.deck_info = response.data        
 
         // Rest hands
-        playerHand = [];
-        dealerHand = [];
+        gameState.playerHand = [];
+        gameState.dealerHand = [];
 
         // Deals cards
         console.log("Redirecting to ./")
@@ -113,19 +116,19 @@ app.get("/stay", async (req, res) => {
 
         while (dealerLogic) {
             // Update dealer logic
-            dealerLogic = functions.dealerLogic(playerHand, dealerHand); 
+            dealerLogic = functions.dealerLogic(gameState.playerHand, gameState.dealerHand); 
             
             // Exit loop if dealer logic is false
             if (!dealerLogic) continue; 
             
             // Add a new card to the dealer's hand
-            const newCard = await functions.drawCard(deck_id, dealerLogic);        
-            dealerHand = functions.cardToHand(dealerHand, newCard);
+            const newCard = await functions.drawCard(gameState.deck_id, dealerLogic);        
+            gameState.dealerHand = functions.cardToHand(gameState.dealerHand, newCard);
         }
 
         // Determine results and render the page
-        results = functions.check(playerHand, dealerHand);
-        res.render("index.ejs", {deck_info, playerHand, dealerHand, results});
+        gameState.results = functions.check(gameState.playerHand, gameState.dealerHand);
+        res.render("index.ejs", { gameState });
 
     } catch (error) {
         console.error("Error staying the game:", error);
@@ -133,7 +136,6 @@ app.get("/stay", async (req, res) => {
     }
   
 })
-
 
 // Start the server after initializing the deck.
 app.listen(port, () => {
