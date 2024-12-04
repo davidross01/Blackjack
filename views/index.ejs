@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="styles/main.css">
+    <title>Blackjack</title>
+    <style>
+        .player-container, .dealer-container{
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            width: 100%;
+            justify-content: flex-start;
+        }
+       
+    </style>
+</head>
+<body>
+    <h1>Welcome To Blackjack</h1>
+    <% if (locals.deck_info) { %>
+        <p><b>Deck ID:</b>  <%= deck_info.deck_id %>, <b>Cards Remaing:</b>  <%= deck_info.remaining %></p>
+        <p><b>Result:</b> <%= results %></p>
+    <% } %>
+
+    <form id="actionForm" metshod="get">
+        <input id="hit" type="submit" value="Hit" formaction="/hit">
+        <input id="stay" type="submit" value="Stay" formaction="/stay">
+        <input id="shuffle" type="submit" value="Shuffle" formaction="/shuffle">
+    </form>
+
+    <div>
+        <h2><u>Dealers Hands</u></h2>
+        <div class="dealer-container">
+            <% if (locals.dealerHand) { %>
+                <% for( let index = 0; index < dealerHand.length; index++ ) { %>
+                    <div>
+                        <div>
+                            <% if (index == 0) { %>
+                             
+                                <img src="https://deckofcardsapi.com/static/img/back.png" alt="Hidden card">
+                            <% } else { %>
+                                <img src="<%=dealerHand[index].images.png%>" alt="Hidden card">
+                            <% } %>
+                        </div>
+                        <p><%= dealerHand[index].value %> <%=  dealerHand[index].suit %></p>
+                    </div>
+                <% } %>
+
+            <% } else { %>
+                <div>
+                    <p>Deck Empty</p>
+                </div>
+            <% } %>
+        </div>
+
+        <h2><u>Player hand</u></h2>
+        <div class="player-container">
+            <% if (playerHand && playerHand.length > 0) { %>
+                <% playerHand.forEach(card => { %>
+                <div>
+                    <p><%= card.value %> <%= card.suit %></p>
+                    <img src="<%=card.images.png%>" alt="<%= card.value %> <%= card.suit %> card">
+                </div>
+            <% }) %>
+            <% } else { %>
+                <div>
+                    <h3>Deck Empty</h3>
+                </div>
+            <% } %>
+        </div>  
+    </div>
+</body>
+</html>
