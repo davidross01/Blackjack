@@ -40,21 +40,25 @@ app.get("/", async (req, res) => {
     }
 
     try {
-        // Deal Player's cards
-        let newCard = await functions.drawCard(gameState.deck_id, 2);
-        gameState.playerHand = functions.cardToHand(gameState.playerHand, newCard);
-        
-        // Deal Dealer's cards
-        newCard = await functions.drawCard(gameState.deck_id, 2);
-        gameState.dealerHand = functions.cardToHand(gameState.dealerHand, newCard);
+        // alternate dealing the cards
+        for (let i = 0; i < 2; i++) {
+            // Deal Player's cards
+            let newCard = await functions.drawCard(gameState.deck_id, 1);
+            gameState.playerHand.value = functions.cardToHand(gameState.playerHand.value, newCard);
+            // gameState.playerHand.img = gameState.playerHand.value.images.png;
+            
+            // Deal Dealer's cards
+            newCard = await functions.drawCard(gameState.deck_id, 1);
+            gameState.dealerHand = functions.cardToHand(gameState.dealerHand, newCard);
+        }
 
         // Converts card data from the response into a readable "Value Suit" string format.
-        const playerHandString = functions.cardsToStrings(gameState.playerHand);
+        const playerHandString = functions.cardsToStrings(gameState.playerHand.value);
         const dealerHandString = functions.cardsToStrings(gameState.dealerHand);
        
         // Print cards in play of the Dealer & Player
         console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
-        
+        // console.log("player images\n",gameState.playerHand.img)
         // update deck_info
         gameState.deck_info = await functions.updateDeck_info(gameState.deck_id);
 
