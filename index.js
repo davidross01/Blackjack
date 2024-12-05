@@ -10,7 +10,7 @@ app.use(express.static("public"));
 app.use(express.static("utils"));
 
 // Global variables for game state
-const gameState = {
+let gameState = {
     deck_info: null,
     deck_id: null,
     playerHand: [],
@@ -18,10 +18,19 @@ const gameState = {
     results: "Game in Play",
 };
 
-// Initialize the deck before handling requests
-gameState.deck_info = await functions.initializeDeck();
-gameState.deck_id = gameState.deck_info.deck_id;
-console.log("Deck Initialized: ", gameState.deck_info);
+
+try {
+    if (!gameState.deck_info || !gameState.deck_id) {
+        console.log("Initializing the deck...");
+        gameState.deck_info = await functions.initializeDeck();
+        gameState.deck_id = gameState.deck_info.deck_id;
+        console.log("Deck Initialized: ", gameState.deck_info);
+    }
+    // next(); // Continue to the next middleware or route handler
+} catch (error) {
+    console.error("Error initializing deck:", error);
+    res.status(500).send("Failed to initialize the deck.");
+}
 
 
 // Route for the home page (initial deal)
@@ -58,6 +67,8 @@ app.get("/", async (req, res) => {
 
 // Route for drawing additional cards
 app.get("/hit", async (req, res) => {
+    console.log("* Button Clicked: Hit")
+
     if (!gameState.deck_info) {
         return res.status(500).send("Deck not initialized.");
     }
@@ -77,6 +88,11 @@ app.get("/hit", async (req, res) => {
          console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
         
          gameState.results = functions.check(gameState.playerHand, gameState.dealerHand);
+        if (gameState.results == "Player busts and loses the bet.") {
+            res.redirect("/stay");
+        } else {
+            gameState.results = "Game in Play"
+        }
 
         // Update deck_info
         gameState.deck_info = await functions.updateDeck_info(gameState.deck_id);
@@ -90,6 +106,7 @@ app.get("/hit", async (req, res) => {
 
 // Route to reset the game and start a new round
 app.get("/shuffle", async (req, res) => {
+    console.log("* Button Clicked: Shuffle")
     try {
           // Reset deck.        
         const response = await axios(`https://deckofcardsapi.com/api/deck/${gameState.deck_id}/shuffle/`);
@@ -98,6 +115,7 @@ app.get("/shuffle", async (req, res) => {
         // Rest hands
         gameState.playerHand = [];
         gameState.dealerHand = [];
+        gameState.results = "Game in Play";
 
         // Deals cards
         console.log("Redirecting to ./")
@@ -111,8 +129,10 @@ app.get("/shuffle", async (req, res) => {
 });
 
 app.get("/stay", async (req, res) => {
+    console.log("* Button Clicked: Stay")
+    
     try {
-        let dealerLogic = true;
+        let dealerLogic = 1;
 
         while (dealerLogic) {
             // Update dealer logic
@@ -124,6 +144,12 @@ app.get("/stay", async (req, res) => {
             // Add a new card to the dealer's hand
             const newCard = await functions.drawCard(gameState.deck_id, dealerLogic);        
             gameState.dealerHand = functions.cardToHand(gameState.dealerHand, newCard);
+            
+            // Delay for 2 seconds (2000 milliseconds)
+            // await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // res.render("index.ejs", { gameState });
+
         }
 
         // Determine results and render the page
