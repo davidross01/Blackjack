@@ -1,3 +1,22 @@
 h1 {
     color: blueviolet;
 }
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.card-container {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 10px;
+}
+
+.card-container div img {
+    width: 200px;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
