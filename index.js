@@ -195,4 +195,3 @@ app.get("/stay", async (req, res) => {
 });
 
 
-Index.js: Refreshing doesn’t add cards, Add images of cards which update and dealer cards flip, Always redirect to home page, connect to display.js.    index.ejs: Rearrange, Add pop-up results, Improve design colours.   functions.js: Adjusts hand values to account for Aces, picture cards to a value.    display.j: fade cards in alternating on deal, fade in new card.
