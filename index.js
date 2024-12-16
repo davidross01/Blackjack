@@ -1,13 +1,24 @@
 import express from "express";
 import axios from "axios";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import functions from "./utils/functions.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
 
-app.use(express.static("public"));
-app.use(express.static("utils"));
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "utils"), {
+    setHeaders: (res, path) => {
+        if (path.endsWith(".js")) {
+            res.setHeader("Content-Type", "application/javascript");
+        }
+    }
+}));
 
 // Global variables for Game State
 let GS = {
@@ -20,59 +31,62 @@ let GS = {
     results: "Game in Play",
 };
 
-
-try {
-    if (!GS.deck_info || !GS.deck_id) {
+(async () => {
+    try {
         console.log("Initializing the deck...");
         GS.deck_info = await functions.initializeDeck();
         GS.deck_id = GS.deck_info.deck_id;
-        console.log("Deck Initialized: ", GS.deck_info);
-    }
-    // next(); // Continue to the next middleware or route handler
-} catch (error) {
-    console.error("Error initializing deck:", error);
-    res.status(500).send("Failed to initialize the deck.");
-}
+        // console.log("Deck Initialized: ", GS.deck_info);
+        console.log("Game State: ", GS);
 
+        app.listen(port, () => {
+            console.log(`Listening on ${port}, http://localhost:${port}`);
+        });
+    } catch (error) {
+        console.error("Error initializing deck:", error);
+        process.exit(1); // Exit if deck initialization fails
+    }
+})();
 
 // Route for the home page (initial deal)
-app.get("/", async (req, res) => {
+app.get('/', async (req, res) => {
     if (!GS.deck_info) {
         return res.status(500).send("Deck not initialized.");
     }
 
     try {
-        // alternate dealing the cards
-        for (let i = 0; i < 2; i++) {
-            // Deal Player's cards
-            let newCard = await functions.drawCard(GS.deck_id, 1);
-            GS.playerHand.value = functions.cardToHand(GS.playerHand, newCard);
-            GS.playerHandImages[i] = GS.playerHand.value[i].image;            
-            
-            // Deal Dealer's cards
-            newCard = await functions.drawCard(GS.deck_id, 1);
-            GS.dealerHand.value = functions.cardToHand(GS.dealerHand, newCard);
+        if (!GS.playerHand.length) {
+            console.log("The player hand is empty!");
+            // alternate dealing the cards
+            for (let i = 0; i < 2; i++) {
+                // Deal Player's cards
+                let newCard = await functions.drawCard(GS.deck_id, 1);
+                GS.playerHand.value = functions.cardToHand(GS.playerHand, newCard);
+                GS.playerHandImages[i] = GS.playerHand.value[i].image;            
+                
+                // Deal Dealer's cards
+                newCard = await functions.drawCard(GS.deck_id, 1);
+                GS.dealerHand.value = functions.cardToHand(GS.dealerHand, newCard);
 
-            if (i == 0) {
-                GS.dealerHandImages[i] = "https://deckofcardsapi.com/static/img/back.png";
-            } else {
-                GS.dealerHandImages[i] = GS.dealerHand.value[i].image;
+                if (i == 0) {
+                    GS.dealerHandImages[i] = "https://deckofcardsapi.com/static/img/back.png";
+                } else {
+                    GS.dealerHandImages[i] = GS.dealerHand.value[i].image;
+                }
+                console.log("Dealer Image:", GS.dealerHandImages[i]);
             }
-            console.log("Dealer Image:", GS.dealerHandImages[i]);
 
+            // Converts card data from the response into a readable "Value Suit" string format.
+            const playerHandString = functions.cardsToStrings(GS.playerHand);
+            const dealerHandString = functions.cardsToStrings(GS.dealerHand);
+        
+            // Print cards in play of the Dealer & Player
+            console.log(`* "/" Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
         }
-
-        // Converts card data from the response into a readable "Value Suit" string format.
-        const playerHandString = functions.cardsToStrings(GS.playerHand.value);
-        const dealerHandString = functions.cardsToStrings(GS.dealerHand);
-       
-        // Print cards in play of the Dealer & Player
-        console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
-        // console.log("player images\n",GS.playerHand.img)
         // update deck_info
         GS.deck_info = await functions.updateDeck_info(GS.deck_id);
 
-        res.render("index.ejs", {GS});
+        res.render("index.ejs", { GS });
     } catch (error) {
         console.error("Error dealing cards:", error);
         res.status(500).send("An error occurred while dealing cards.");
@@ -98,20 +112,21 @@ app.get("/hit", async (req, res) => {
         const playerHandString = functions.cardsToStrings(GS.playerHand);
         const dealerHandString = functions.cardsToStrings(GS.dealerHand);
         
-         // Print cards in play of the Dealer & Player
-         console.log(`* Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
+        // Print cards in play of the Dealer & Player
+        console.log(`* [HIT] Cards In PLAY *\nDealer Cards: ${dealerHandString}.\nPlayer Cards: ${playerHandString}.`);     
         
-         GS.results = functions.check(GS.playerHand, GS.dealerHand);
+        GS.results = functions.check(GS.playerHand, GS.dealerHand);
+
         if (GS.results == "Player busts and loses the bet.") {
-            res.redirect("/stay");
+            res.redirect("/");
         } else {
             GS.results = "Game in Play"
         }
 
-        // Update deck_info
+        // Update deck_info how many cards have been removed 
         GS.deck_info = await functions.updateDeck_info(GS.deck_id);
+        res.redirect("/")
 
-        res.render("index.ejs", {GS});
     } catch (error) {
         console.error('- Error drawing cards: \n', error);
         res.status(500).send("An error occurred while drawing cards.");
@@ -121,25 +136,27 @@ app.get("/hit", async (req, res) => {
 // Route to reset the game and start a new round
 app.get("/shuffle", async (req, res) => {
     console.log("* Button Clicked: Shuffle")
+    if (!GS.deck_id) {
+        return res.status(500).send("Deck ID is not initialized.");
+    }
     try {
-          // Reset deck.        
+        // Resuffle deck.        
         const response = await axios(`https://deckofcardsapi.com/api/deck/${GS.deck_id}/shuffle/`);
-        GS.deck_info = response.data        
+        GS.deck_info = response.data;
 
         // Rest hands
         GS.playerHand = [];
         GS.dealerHand = [];
+        GS.playerHandImages = [];
+        GS.dealerHandImages = [];
         GS.results = "Game in Play";
 
-        // Deals cards
-        console.log("Redirecting to ./")
-        res.redirect("/");
-
+        console.log("GS: DEALER", GS.playerHand);
+        res.redirect(`/`);
     } catch (error) {
         console.error("Error resetting the game:", error);
         res.status(500).send("An error occurred while resetting the game.");
     }
-
 });
 
 app.get("/stay", async (req, res) => {
@@ -153,7 +170,7 @@ app.get("/stay", async (req, res) => {
             dealerLogic = functions.dealerLogic(GS.playerHand, GS.dealerHand); 
             
             // Exit loop if dealer logic is false
-            if (!dealerLogic) continue; 
+            if (!dealerLogic) break; 
             
             // Add a new card to the dealer's hand
             let newCard = await functions.drawCard(GS.deck_id, dealerLogic);        
@@ -167,16 +184,15 @@ app.get("/stay", async (req, res) => {
 
         // Determine results and render the page
         GS.results = functions.check(GS.playerHand, GS.dealerHand);
-        res.render("index.ejs", { GS });
+        
+        GS.deck_info = await functions.updateDeck_info(GS.deck_id);
+        res.redirect("/")
 
     } catch (error) {
         console.error("Error staying the game:", error);
         res.status(500).send("An error occurred while staying the game.");
     }
-  
-})
-
-// Start the server after initializing the deck.
-app.listen(port, () => {
-    console.log(`Listening on ${port}, http://localhost:${port}`);
 });
+
+
+Index.js: Refreshing doesn’t add cards, Add images of cards which update and dealer cards flip, Always redirect to home page, connect to display.js.    index.ejs: Rearrange, Add pop-up results, Improve design colours.   functions.js: Adjusts hand values to account for Aces, picture cards to a value.    display.j: fade cards in alternating on deal, fade in new card.

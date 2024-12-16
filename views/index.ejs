@@ -3,68 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="styles/main.css">
+    <link rel="stylesheet" type="text/css" href="/styles/main.css">
     <title>Blackjack</title>
-    <style>
-        /* .player-container, .dealer-container{
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            width: 100%;
-            justify-content: flex-start;
-        } */
-       
-    </style>
 </head>
 <body>
-    <h1>Welcome To Blackjack</h1>
-    <% if (locals.GS.deck_info) { %>
-        <p><b>Deck ID:</b>  <%= GS.deck_id %>, <b>Cards Remaing:</b>  <%= GS.deck_info.remaining %></p>
-        <p><b>Result:</b> <%= GS.results %></p>
+    
+    <div class="header">        
+        <% if (locals.GS.deck_info) { %>
+            <div>
+                <h1>Welcome To Blackjack</h1>
+                <p id="deckID"><b>Deck ID:</b>  <%= GS.deck_id %></p>
+            </div>
+            <p><b>Cards Remaing:</b>  <%= GS.deck_info.remaining %></p>
+        <% } %>
+    </div>
+    
+    <% if (GS.results  != "Game in Play") { %>
+        <div class="results-container">
+            <h2><%= GS.results %></h2>
+        </div>
     <% } %>
 
-    <form id="actionForm" metshod="get">
-        <input id="hit" type="submit" value="Hit" formaction="/hit">
-        <input id="stay" type="submit" value="Stay" formaction="/stay">
-        <input id="shuffle" type="submit" value="Shuffle" formaction="/shuffle">
-    </form>
-
     <div>
-        <h2><u>Dealers Hands</u></h2>
-        <div class="card-container">
+        <div class="card-container dealerHand">
             <% if (locals.GS.dealerHand) { %>
                 <% for( let index = 0; index < GS.dealerHand.length; index++ ) { %>
-                    <div>
-                        <div>
-                            
-                                <img src="<%=GS.dealerHandImages[index]%>" alt="Hidden card">
-                        </div>
-                        <p><%= GS.dealerHand[index].value %> <%=  GS.dealerHand[index].suit %></p>
+                    <div class="card">   
+                        <img src="<%=GS.dealerHandImages[index]%>" alt="Hidden card">
                     </div>
                 <% } %>
 
             <% } else { %>
                 <div>
-                    <p>Deck Empty</p>
+                    <h3 style="color: red;">Deck Empty</h3>
                 </div>
             <% } %>
         </div>
+        <h2>Dealer</h2>
 
-        <h2><u>Player hand</u></h2>
-        <div class="card-container">
+        <h2>Player</h2>
+        <div class="card-container playerHand">
             <% if (GS.playerHand && GS.playerHand.length > 0) { %>
                 <% GS.playerHand.forEach(card => { %>
-                <div>
-                    <p><%= card.value %> <%= card.suit %></p>
+                <div class="card">
                     <img src="<%=card.images.png%>" alt="<%= card.value %> <%= card.suit %> card">
                 </div>
             <% }) %>
             <% } else { %>
                 <div>
-                    <h3>Deck Empty</h3>
+                    <h3 style="color: red;">Deck Empty</h3>
                 </div>
             <% } %>
         </div>  
+        <div class="controls-container">
+            <form id="actionForm" metshod="get">
+                <input id="hit" type="submit" value="Hit" formaction="/hit">
+                <input id="stay" type="submit" value="Stay" formaction="/stay">
+                <input id="shuffle" type="submit" value="Shuffle" formaction="/shuffle">
+            </form>
+        </div>
     </div>
+    <script src="/display.js"></script>
 </body>
 </html>

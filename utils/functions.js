@@ -60,63 +60,61 @@ function cardToHand(playerHand, cards) {
     }
 }
 
+// Adjusts hand values to account for Aces
+function adjustForAces(handValues) {
+    let total = handValues.reduce((acc, curr) => acc + curr, 0);
+    let aceCount = handValues.filter(value => value === 11).length;
+
+    while (total > 21 && aceCount > 0) {
+        total -= 10;
+        aceCount--;
+    }
+
+    return total;
+}
+
 // Converts a hand of cards into an array of numeric values.
-// Face cards (JACK, QUEEN, KING) are worth 10, ACE is worth 11, and others match their face value.
+// Converts card objects into numeric values (uses adjustForAces optionally)
 function cardsToArray(hand) {
     try {
         const handValues = hand.map(card => {
-            if (card.value === "ACE") {
-                return 11; // Ace is worth 11 by default (can be adjusted later in the game logic).
-            } else if (card.value === "JACK" || card.value === "QUEEN" || card.value === "KING") {
-                return 10; // Face cards are worth 10.
-            } else {
-                return Number(card.value); // Numeric cards are converted to numbers.
-            }
+            if (card.value === "ACE") return 11;
+            if (["JACK", "QUEEN", "KING"].includes(card.value)) return 10;
+            return Number(card.value);
         });
-        return handValues; // Returns an array of numeric values.
+        return handValues; // Or use: return adjustForAces(handValues);
     } catch (error) {
-        console.error("* Error converting cards to array:  **\n", error);
-        return []; // Return an empty array in case of error.
+        console.error("* Error converting cards to array: **\n", error);
+        return [];
     }
 }
 
 // Evaluates the game state by comparing the player's and dealer's hands.
 // Checks for blackjack, busts, and determines the winner.
+// Game state evaluation
 function check(playerHand, dealerHand) {
     try {
-        var result;
-
-        // Convert hands to numeric value arrays.
         const playerHandValues = cardsToArray(playerHand);
         const dealerHandValues = cardsToArray(dealerHand);
 
-        // Calculate the total value of each hand.
-        const playerHandValuesTotal = playerHandValues.reduce((acc, curr) => acc + curr, 0);
-        const dealerHandValuesTotal = dealerHandValues.reduce((acc, curr) => acc + curr, 0);
+        const playerTotal = adjustForAces(playerHandValues);
+        const dealerTotal = adjustForAces(dealerHandValues);
 
-        console.log("Dealer hand values:", dealerHandValuesTotal);
-        console.log("Player hand values:", playerHandValuesTotal);
-
-        // Check game conditions and log the results.
-        if (dealerHandValuesTotal === 21 && dealerHandValuesTotal.length === 2) {
-            result = "Dealer has Blackjack. If player took insurance, it pays 2:1.";
-        } else if (playerHandValuesTotal === 21 && playerHandValuesTotal.length === 2) {
-            result = "Blackjack! Player wins 1.5 times the bet unless dealer also has Blackjack.";
-        } else if (playerHandValuesTotal > 21) {
-            result = "Player busts and loses the bet.";
-        } else if (dealerHandValuesTotal > 21) {
-            result = "Dealer busts. Player wins.";
-        } else if (playerHandValuesTotal > dealerHandValuesTotal) {
-            result = "Player wins.";
-        } else if (playerHandValuesTotal < dealerHandValuesTotal) {
-            result = "Dealer wins.";
+        if (dealerTotal === 21 && dealerHand.length === 2) {
+            return "Dealer has Blackjack";
+        } else if (playerTotal === 21 && playerHand.length === 2) {
+            return "Blackjack! Player Wins!";
+        } else if (playerTotal > 21) {
+            return "Player Busts and Loses The Bet.";
+        } else if (dealerTotal > 21) {
+            return "Dealer Busts. Player wins.";
+        } else if (playerTotal > dealerTotal) {
+            return "Player Wins!";
+        } else if (playerTotal < dealerTotal) {
+            return "Dealer Wins";
         } else {
-            result = "Push. Player's bet is returned.";
-        }      
-        console.log(result);  
-        
-        return result;
-
+            return "Push. Player's bet is returned.";
+        }
     } catch (error) {
         console.error("* Error checking game state: *\n", error);
     }
@@ -126,27 +124,24 @@ function dealerLogic(playerHand, dealerHand) {
     try {
 
     const dealerHandValues = cardsToArray(dealerHand);
+    const playerHandValues = cardsToArray(playerHand);
 
     // Calculate the total value of players' hand.
-    const dealerHandValuesTotal = dealerHandValues.reduce((acc, curr) => acc + curr, 0);
+    const dealerTotal = dealerHandValues.reduce((acc, curr) => acc + curr, 0);
+    const playerTotal = playerHandValues.reduce((acc, curr) => acc + curr, 0);
 
-    var result;
-    if (dealerHandValuesTotal >= 17 || playerHand > 21) {
-        result = 0; // Always stand on soft 17 or higher.
+    if (dealerTotal >= 17 || playerTotal > 21) {
         console.log("+ Dealer: Stay");        
+        return 0; // Always stand on soft 17 or higher.
     } else {
-        result = 1; // Hit if the dealer's card is weak.
         console.log("+ Dealer: Hit");
+        return  1; // Hit if the dealer's card is weak.
     }
-
-    return result;
     
     } catch (error) {
         console.error("* Error checking dealLogic state: *\n", error);
 
     }
-    
-    
 }
 
 // Export all the functions to use them in other files.

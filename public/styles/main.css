@@ -1,22 +1,138 @@
-h1 {
-    color: blueviolet;
-}
 
 body {
-    font-family: Arial, sans-serif;
+    color: goldenrod;
+    font-family: Georgia, sans-serif;
     text-align: center;
+    background-color: #00773A;
+    box-shadow: inset 0px 0px 20px 0.5px black;
+    margin: 0;
+    height: 100vh;
+
+}
+/* -----  Header ----- */
+.header  {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 0px 10px 10px ;
+}
+.header > * {
+    margin: 0;
+    text-align: left;
+    padding: 4px 0;
+}
+.header > div > * {
+    margin: 0;
+    text-align: left;
 }
 
+h2 {
+  margin: 5px 0;
+}
+
+/* -----  Card ----- */
 .card-container {
     display: flex;
     justify-content: center;
-    gap: 5px;
+    background-color: #006431;
+    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    /* gap: 10px; */
     margin: 10px;
+    border: 5px solid goldenrod;
+    border-radius: 5px;
+    padding: 10px 0px;
+    margin: 0 10%;
+    box-shadow: 3px 5px 10px black;
+    min-width: 500px;
+}
+
+#deckID {
+  opacity: 0.3;
+}
+
+/* Container for the cards */
+.card {
+  transition: transform 0.3s ease, opacity 0.5s ease;
+  width: 100px; 
+  z-index: 0;
+  opacity: 0;
+  position: relative;
+  right: 65px;
 }
 
 .card-container div img {
-    width: 200px;
-    height: auto;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+  height: auto;
+  width: auto;
+  border-radius: 15px;
 }
+
+.card.show {
+  opacity: 1;
+}
+
+.playerHand .card img:hover {
+  transform: translateY(-10px) translateZ(240px);
+  position:  revert-layer;
+  /* transform: translateZ(10px); */
+  /* transform: ; */
+  z-index: 1;
+  box-shadow: 0 4px 6px rgb(0, 0, 0);
+
+
+}
+
+.card-container img {
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* -----  Buttons ----- */
+.controls-container {
+  margin: 20px 0px;
+}
+.controls-container input {
+  width: 100px;
+  height: 40px;
+  font-weight: 600;
+  font-size: large;
+  border-radius: 5px;
+}
+#hit {
+background-color: #B51933;
+background-color: #2eb519;
+}
+
+#stay {
+  background-color: #2eb519;
+  background-color: #B51933;
+
+}
+
+#shuffle {
+  background-color: #590d1b;
+  color: rgb(235, 235, 235);
+
+}
+
+/* -----  Results ----- */
+.results-container{
+  position: fixed; 
+  top: 50%; 
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  text-align: center;
+  width: 300px; 
+  padding: 20px; 
+  background: #f4f4f4; 
+  border: 5px solid goldenrod;
+  color: black;
+  border-radius: 8px; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.803);
+  z-index: 2;
+}
+
